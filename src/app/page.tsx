@@ -17,8 +17,18 @@ import { Card, CardContent } from "@/components/ui/card";
 // Mock SOC analysts for assignment
 const SOC_ANALYSTS = ['Alice', 'Bob', 'Charlie', 'Dana', 'Unassigned'];
 
+// Initial mock data for demonstration purposes
+const initialMockThreats: Threat[] = [
+    { id: 'mock-1', name: 'Example: Phishing Attempt', description: 'Detected potential phishing email targeting internal users.', status: 'Pending', assignee: null },
+    { id: 'mock-2', name: 'Example: Malware Signature', description: 'Known malware signature detected on endpoint X.', status: 'In Progress', assignee: 'Alice' },
+    { id: 'mock-3', name: 'Example: Brute Force Login', description: 'Multiple failed login attempts on admin account.', status: 'Triaged', assignee: 'Bob' },
+    { id: 'mock-4', name: 'Example: SQL Injection Vulnerability', description: 'Code scan identified a potential SQL injection point.', status: 'Resolved', assignee: 'Charlie' },
+    { id: 'mock-5', name: 'Example: Unusual Outbound Traffic', description: 'Firewall logs show unexpected outbound connections from server Y.', status: 'Pending', assignee: null },
+    { id: 'mock-6', name: 'Example: XSS Detected', description: 'Cross-site scripting attempt blocked on web server.', status: 'In Progress', assignee: 'Alice' },
+];
+
 export default function Home() {
-  const [threats, setThreats] = useState<Threat[]>([]);
+  const [threats, setThreats] = useState<Threat[]>(initialMockThreats); // Initialize with mock data
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("triage"); // State for active tab
@@ -27,7 +37,7 @@ export default function Home() {
   const handleFormSubmit = async (values: ThreatInputFormValues) => {
     setLoading(true);
     setError(null); // Clear previous errors
-    setThreats([]); // Clear previous threats while loading new ones
+    setThreats([]); // Clear previous/mock threats while loading new ones
 
     try {
       const result: SuggestThreatsOutput = await suggestThreats({
@@ -37,19 +47,21 @@ export default function Home() {
       });
 
       // Add initial status and assignee to the threats returned by the AI/service
-      const initialThreats: Threat[] = result.threats.map((baseThreat: BaseThreat, index: number) => ({
+      const newThreats: Threat[] = result.threats.map((baseThreat: BaseThreat, index: number) => ({
         ...baseThreat,
         id: `threat-${Date.now()}-${index}`, // Simple unique ID generation
         status: 'Pending', // Default status
         assignee: null, // Default assignee
       }));
 
-      setThreats(initialThreats);
+      setThreats(newThreats);
        toast({
           title: "Analysis Complete",
-          description: `${initialThreats.length} potential threats identified.`,
+          description: `${newThreats.length} potential threats identified.`,
           variant: "default", // Use default variant for success
         });
+      // Switch to triage tab after successful analysis
+      setActiveTab("triage");
     } catch (err) {
       console.error("Error fetching threats:", err);
       const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
@@ -59,6 +71,7 @@ export default function Home() {
           description: `Failed to retrieve threat suggestions. Please try again. Details: ${errorMessage}`,
           variant: "destructive",
         });
+       setThreats(initialMockThreats); // Restore mock threats on error? Or keep empty? Let's keep empty.
        setThreats([]); // Clear threats on error
     } finally {
       setLoading(false);
@@ -171,14 +184,15 @@ export default function Home() {
                  <TabsContent value="triage" className="flex-grow">
                    <ThreatTriageTable
                      threats={threats}
-                     loading={loading}
+                     loading={loading && threats.length === 0} // Show loading skeleton only if loading AND no threats yet
                      socAnalysts={SOC_ANALYSTS}
                      onStatusChange={handleStatusChange}
                      onAssigneeChange={handleAssigneeChange}
                    />
                  </TabsContent>
                  <TabsContent value="dashboard" className="flex-grow">
-                    <DashboardView data={dashboardData} loading={loading}/>
+                    {/* Pass loading state to DashboardView to show skeletons while form is submitting */}
+                    <DashboardView data={dashboardData} loading={loading && threats.length === 0} />
                  </TabsContent>
              </Tabs>
           </div>

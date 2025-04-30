@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface ThreatTriageTableProps {
   threats: Threat[];
+  /** Indicates if new threats are being loaded (typically after form submission) */
   loading: boolean;
   socAnalysts: string[]; // List of SOC analyst names
   onStatusChange: (threatId: string, newStatus: Threat['status']) => void;
@@ -55,6 +56,10 @@ export function ThreatTriageTable({
   onStatusChange,
   onAssigneeChange
 }: ThreatTriageTableProps) {
+  // Show skeleton only when loading is true AND there are no threats currently displayed.
+  // This prevents showing skeletons over the initial mock data.
+  const showSkeleton = loading && threats.length === 0;
+
   return (
     <Card className="shadow-lg rounded-lg h-full flex flex-col border border-border">
       {/* CardHeader can be optional if title is handled by Tabs */}
@@ -64,7 +69,7 @@ export function ThreatTriageTable({
       </CardHeader> */}
       <CardContent className="flex-grow overflow-hidden p-0"> {/* Remove default padding */}
         <ScrollArea className="h-full">
-          {loading ? (
+          {showSkeleton ? (
              <div className="space-y-4 p-6"> {/* Add padding for skeletons */}
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="flex items-center space-x-4 p-4 border rounded-md bg-card">
@@ -167,6 +172,7 @@ export function ThreatTriageTable({
               </TableBody>
             </Table>
           ) : (
+            // This empty state is shown if not loading and threats array is empty
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-10 h-full">
                <CircleHelp className="w-16 h-16 mb-4 text-muted-foreground/50"/>
               <p className="text-lg font-medium">No Threats Found</p>
@@ -178,5 +184,4 @@ export function ThreatTriageTable({
     </Card>
   );
 }
-
     

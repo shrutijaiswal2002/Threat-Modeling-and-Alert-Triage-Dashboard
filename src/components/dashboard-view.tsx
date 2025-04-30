@@ -30,6 +30,7 @@ export interface DashboardData {
 
 interface DashboardViewProps {
   data: DashboardData;
+  /** Indicates if new data is being loaded (typically after form submission) */
   loading: boolean;
 }
 
@@ -46,6 +47,11 @@ const CHART_COLORS = [
 export function DashboardView({ data, loading }: DashboardViewProps) {
 
   const { summary, statusDistribution, assigneeDistribution } = data;
+
+  // Show skeleton only when loading is true AND there's no summary data yet (total is 0).
+  // This prevents showing skeletons over the initial mock data or previously loaded data.
+  const showSkeleton = loading && summary.total === 0;
+
 
   // Chart configurations (optional, for advanced customization)
   const statusChartConfig = statusDistribution.reduce((acc, cur, idx) => {
@@ -66,7 +72,7 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
         const y = cy + radius * Math.sin(-midAngle * RADIAN);
         const percentage = (percent * 100).toFixed(0);
 
-        if (percentage === "0") return null; // Don't render label if value is 0
+        if (value === 0) return null; // Don't render label if value is 0
 
         return (
             <text
@@ -98,48 +104,49 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
        <Card className="shadow-md rounded-lg border border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Threats</CardTitle>
-             {loading ? <Skeleton className="h-4 w-4" /> : <ListChecks className="h-4 w-4 text-muted-foreground" />}
+             {showSkeleton ? <Skeleton className="h-4 w-4" /> : <ListChecks className="h-4 w-4 text-muted-foreground" />}
             </CardHeader>
             <CardContent>
-            {loading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.total}</div>}
+            {showSkeleton ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.total}</div>}
             <p className="text-xs text-muted-foreground">
-                {loading ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Total threats identified"}
+                {showSkeleton ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Total threats identified"}
             </p>
             </CardContent>
        </Card>
         <Card className="shadow-md rounded-lg border border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
-             {loading ? <Skeleton className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+             {showSkeleton ? <Skeleton className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
             </CardHeader>
             <CardContent>
-            {loading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.pending}</div>}
+            {showSkeleton ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.pending}</div>}
              <p className="text-xs text-muted-foreground">
-                {loading ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Awaiting initial triage"}
+                {showSkeleton ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Awaiting initial triage"}
              </p>
             </CardContent>
         </Card>
        <Card className="shadow-md rounded-lg border border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            {loading ? <Skeleton className="h-4 w-4" /> : <Activity className="h-4 w-4 text-orange-500" />}
+            {showSkeleton ? <Skeleton className="h-4 w-4" /> : <Activity className="h-4 w-4 text-orange-500" />}
             </CardHeader>
             <CardContent>
-            {loading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.inProgress + summary.triaged}</div>}
+            {/* Combine Triaged and In Progress for this card if desired */}
+            {showSkeleton ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.inProgress + summary.triaged}</div>}
             <p className="text-xs text-muted-foreground">
-                {loading ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Actively being worked on"}
+                {showSkeleton ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Actively being worked on"}
             </p>
             </CardContent>
        </Card>
        <Card className="shadow-md rounded-lg border border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-             {loading ? <Skeleton className="h-4 w-4" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
+             {showSkeleton ? <Skeleton className="h-4 w-4" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
             </CardHeader>
             <CardContent>
-            {loading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.resolved}</div>}
+            {showSkeleton ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.resolved}</div>}
             <p className="text-xs text-muted-foreground">
-                {loading ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Mitigated or closed threats"}
+                {showSkeleton ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Mitigated or closed threats"}
             </p>
             </CardContent>
        </Card>
@@ -151,10 +158,11 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                 <CardDescription>Breakdown of threats by current status</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px]">
-                 {loading ? (
+                 {showSkeleton ? (
                     <div className="flex justify-center items-center h-full">
                         <Skeleton className="h-48 w-48 rounded-full" />
                     </div>
+                // Only render the chart if not loading AND there is data
                 ) : summary.total > 0 ? (
                 <ChartContainer config={statusChartConfig} className="min-h-[200px] w-full">
                  <ResponsiveContainer width="100%" height="100%">
@@ -181,9 +189,11 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                    </ResponsiveContainer>
                  </ChartContainer>
                  ) : (
+                    // Show empty state if not loading and no data
                     <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full">
                         <CircleHelp className="w-12 h-12 mb-2 text-muted-foreground/50"/>
-                        <p>No data available for status distribution.</p>
+                        <p>No threat data available.</p>
+                        <p className="text-sm">Submit system details to analyze.</p>
                     </div>
                  )}
             </CardContent>
@@ -196,11 +206,12 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                 <CardDescription>Number of threats assigned to each SOC analyst</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px]">
-                 {loading ? (
+                 {showSkeleton ? (
                     <div className="flex justify-center items-center h-full">
                         <Skeleton className="h-48 w-full" />
                     </div>
-                ) : summary.total > 0 ? (
+                 // Only render the chart if not loading AND there is data
+                 ) : summary.total > 0 ? (
                  <ChartContainer config={assigneeChartConfig} className="min-h-[200px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
                      <BarChart data={assigneeDistribution} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
@@ -220,9 +231,11 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                      </ResponsiveContainer>
                  </ChartContainer>
                   ) : (
+                    // Show empty state if not loading and no data
                     <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full">
                          <CircleHelp className="w-12 h-12 mb-2 text-muted-foreground/50"/>
-                         <p>No data available for assignee workload.</p>
+                         <p>No threat data available.</p>
+                         <p className="text-sm">Threats must be present to show workload.</p>
                      </div>
                    )}
             </CardContent>
