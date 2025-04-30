@@ -1,4 +1,4 @@
-import type { Threat } from '@/lib/types'; // Import Threat type
+import type { BaseThreat } from '@/ai/flows/suggest-threats'; // Use BaseThreat type
 
 /**
  * Represents details about a system.
@@ -13,11 +13,12 @@ export interface SystemDetails {
 
 /**
  * Asynchronously retrieves potential threats based on system details.
+ * Returns only the name and description of threats.
  *
  * @param systemDetails The details of the system.
- * @returns A promise that resolves to an array of Threat objects.
+ * @returns A promise that resolves to an array of BaseThreat objects.
  */
-export async function getThreats(systemDetails: SystemDetails): Promise<Threat[]> {
+export async function getThreats(systemDetails: SystemDetails): Promise<BaseThreat[]> {
   // TODO: Implement this by calling an external threat intelligence API.
   // For now, return mock data after a short delay to simulate network request.
 

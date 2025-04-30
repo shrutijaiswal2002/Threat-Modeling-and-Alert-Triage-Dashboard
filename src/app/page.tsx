@@ -4,11 +4,14 @@ import * as React from 'react';
 import { useState } from 'react';
 import { ThreatInputForm, type ThreatInputFormValues } from '@/components/threat-input-form';
 import { ThreatModelDisplay } from '@/components/threat-model-display';
-import { suggestThreats, type SuggestThreatsOutput } from '@/ai/flows/suggest-threats';
+import { suggestThreats, type SuggestThreatsOutput, type BaseThreat } from '@/ai/flows/suggest-threats';
 import type { Threat } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Mock SOC analysts for assignment
+const SOC_ANALYSTS = ['Alice', 'Bob', 'Charlie', 'Dana', 'Unassigned'];
 
 export default function Home() {
   const [threats, setThreats] = useState<Threat[]>([]);
@@ -27,10 +30,19 @@ export default function Home() {
           description: values.description,
         },
       });
-      setThreats(result.threats);
+
+      // Add initial status and assignee to the threats returned by the AI/service
+      const initialThreats: Threat[] = result.threats.map((baseThreat: BaseThreat, index: number) => ({
+        ...baseThreat,
+        id: `threat-${Date.now()}-${index}`, // Simple unique ID generation
+        status: 'Pending',
+        assignee: null,
+      }));
+
+      setThreats(initialThreats);
        toast({
           title: "Analysis Complete",
-          description: "Potential threats have been identified.",
+          description: `${initialThreats.length} potential threats identified.`,
           variant: "default", // Use default variant for success
         });
     } catch (err) {
@@ -48,12 +60,39 @@ export default function Home() {
     }
   };
 
+  // Handler to update the status of a specific threat
+  const handleStatusChange = (threatId: string, newStatus: Threat['status']) => {
+    setThreats(prevThreats =>
+      prevThreats.map(threat =>
+        threat.id === threatId ? { ...threat, status: newStatus } : threat
+      )
+    );
+     toast({
+          title: "Status Updated",
+          description: `Threat status changed to ${newStatus}.`,
+        });
+  };
+
+  // Handler to update the assignee of a specific threat
+  const handleAssigneeChange = (threatId: string, newAssignee: string | null) => {
+     const assigneeName = newAssignee === 'Unassigned' ? null : newAssignee;
+     setThreats(prevThreats =>
+      prevThreats.map(threat =>
+        threat.id === threatId ? { ...threat, assignee: assigneeName } : threat
+      )
+    );
+     toast({
+          title: "Assignee Updated",
+          description: `Threat assigned to ${assigneeName ?? 'Unassigned'}.`,
+        });
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-12 lg:p-24 bg-background">
+    <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-12 lg:p-24 bg-background">
       <div className="container mx-auto max-w-6xl space-y-8">
          <header className="text-center mb-12">
-           <h1 className="text-4xl font-bold text-primary mb-2">ThreatWise</h1>
-           <p className="text-lg text-foreground/80">Proactive Risk Assessment through AI-Powered Threat Modeling</p>
+           <h1 className="text-4xl font-bold text-primary mb-2">ThreatWise SIEM</h1>
+           <p className="text-lg text-foreground/80">Triage and Manage AI-Identified Security Threats</p>
          </header>
 
          {error && (
@@ -65,12 +104,18 @@ export default function Home() {
         )}
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 flex flex-col">
             <ThreatInputForm onSubmit={handleFormSubmit} loading={loading} />
           </div>
-          <div className="flex flex-col h-[500px] md:h-auto"> {/* Set fixed height for mobile, auto for larger screens */}
-            <ThreatModelDisplay threats={threats} loading={loading} />
+          <div className="lg:col-span-2 flex flex-col min-h-[500px]"> {/* Ensure display area has min height */}
+            <ThreatModelDisplay
+                threats={threats}
+                loading={loading}
+                socAnalysts={SOC_ANALYSTS}
+                onStatusChange={handleStatusChange}
+                onAssigneeChange={handleAssigneeChange}
+             />
           </div>
         </div>
 
