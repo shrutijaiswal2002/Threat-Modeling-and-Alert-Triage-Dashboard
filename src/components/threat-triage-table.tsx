@@ -1,7 +1,7 @@
 
 "use client";
 
-import type * as React from 'react';
+import * as React from 'react'; // Import React
 import type { Threat } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -185,3 +185,4 @@ export function ThreatTriageTable({
   );
 }
     
+
