@@ -72,7 +72,7 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
         const y = cy + radius * Math.sin(-midAngle * RADIAN);
         const percentage = (percent * 100).toFixed(0);
 
-        if (value === 0) return null; // Don't render label if value is 0
+        if (value === 0 || percent < 0.05) return null; // Don't render label if value is 0 or too small
 
         return (
             <text
@@ -83,7 +83,8 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
             dominantBaseline="central"
             className="text-xs font-medium"
             >
-            {`${name} (${percentage}%)`}
+            {/* {`${name} (${percentage}%)`} */}
+             {`${percentage}%`} {/* Show only percentage */}
             </text>
         );
     };
@@ -131,10 +132,10 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
             {showSkeleton ? <Skeleton className="h-4 w-4" /> : <Activity className="h-4 w-4 text-orange-500" />}
             </CardHeader>
             <CardContent>
-            {/* Combine Triaged and In Progress for this card if desired */}
+            {/* Combine Triaged and In Progress for this card */}
             {showSkeleton ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{summary.inProgress + summary.triaged}</div>}
             <p className="text-xs text-muted-foreground">
-                {showSkeleton ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Actively being worked on"}
+                {showSkeleton ? <Skeleton className="h-3 w-3/4 mt-1"/> : "Triaged or actively worked on"}
             </p>
             </CardContent>
        </Card>
@@ -157,15 +158,16 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                 <CardTitle className="flex items-center"><PieChart className="mr-2 h-5 w-5 text-primary"/> Status Distribution</CardTitle>
                 <CardDescription>Breakdown of threats by current status</CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            {/* Use flex to center chart content */}
+            <CardContent className="h-[300px] flex items-center justify-center p-0">
                  {showSkeleton ? (
-                    <div className="flex justify-center items-center h-full">
+                    <div className="flex justify-center items-center h-full w-full">
                         <Skeleton className="h-48 w-48 rounded-full" />
                     </div>
                 // Only render the chart if not loading AND there is data
                 ) : summary.total > 0 ? (
-                <ChartContainer config={statusChartConfig} className="min-h-[200px] w-full">
-                 <ResponsiveContainer width="100%" height="100%">
+                <ChartContainer config={statusChartConfig} className="min-h-[250px] w-full max-w-[90%]">
+                 <ResponsiveContainer width="100%" height={250}>
                    <RechartsPieChart>
                      <ChartTooltip content={<ChartTooltipContent nameKey="value" hideLabel />} />
                      <Pie
@@ -179,18 +181,19 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                         labelLine={false}
                         label={renderCustomizedLabel}
                         paddingAngle={2} // Add slight padding between segments
+                        activeIndex={0} // Optional: highlight first segment initially
                       >
                         {statusDistribution.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]} stroke="hsl(var(--background))" strokeWidth={2} /> // Add border
                         ))}
                      </Pie>
-                       <ChartLegend content={<ChartLegendContent />} />
+                       <ChartLegend content={<ChartLegendContent nameKey="name" />} />
                    </RechartsPieChart>
                    </ResponsiveContainer>
                  </ChartContainer>
                  ) : (
                     // Show empty state if not loading and no data
-                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full">
+                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full w-full">
                         <CircleHelp className="w-12 h-12 mb-2 text-muted-foreground/50"/>
                         <p>No threat data available.</p>
                         <p className="text-sm">Submit system details to analyze.</p>
@@ -205,22 +208,23 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                 <CardTitle className="flex items-center"><BarChart2 className="mr-2 h-5 w-5 text-primary"/> Assignee Workload</CardTitle>
                 <CardDescription>Number of threats assigned to each SOC analyst</CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            {/* Use flex to center chart content */}
+            <CardContent className="h-[300px] flex items-center justify-center p-0">
                  {showSkeleton ? (
-                    <div className="flex justify-center items-center h-full">
+                    <div className="flex justify-center items-center h-full w-full">
                         <Skeleton className="h-48 w-full" />
                     </div>
                  // Only render the chart if not loading AND there is data
                  ) : summary.total > 0 ? (
-                 <ChartContainer config={assigneeChartConfig} className="min-h-[200px] w-full">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <BarChart data={assigneeDistribution} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+                 <ChartContainer config={assigneeChartConfig} className="min-h-[250px] w-full max-w-[90%]">
+                   <ResponsiveContainer width="100%" height={250}>
+                     <BarChart data={assigneeDistribution} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} barGap={4} barCategoryGap="20%">
                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                          <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} className="text-xs"/>
                          <YAxis tickLine={false} axisLine={false} tickMargin={8} width={30} className="text-xs" allowDecimals={false}/>
                          <ChartTooltip
                             cursor={false}
-                            content={<ChartTooltipContent indicator="line" hideLabel />}
+                            content={<ChartTooltipContent indicator="line" hideLabel nameKey="value" />}
                          />
                          <Bar dataKey="value" radius={4} label={renderAssigneeLabel}>
                              {assigneeDistribution.map((entry, index) => (
@@ -232,7 +236,7 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                  </ChartContainer>
                   ) : (
                     // Show empty state if not loading and no data
-                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full">
+                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full w-full">
                          <CircleHelp className="w-12 h-12 mb-2 text-muted-foreground/50"/>
                          <p>No threat data available.</p>
                          <p className="text-sm">Threats must be present to show workload.</p>
@@ -243,5 +247,3 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
     </div>
   );
 }
-
-    
