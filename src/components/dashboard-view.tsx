@@ -158,16 +158,16 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                 <CardTitle className="flex items-center"><PieChart className="mr-2 h-5 w-5 text-primary"/> Status Distribution</CardTitle>
                 <CardDescription>Breakdown of threats by current status</CardDescription>
             </CardHeader>
-            {/* Use flex to center chart content */}
-            <CardContent className="h-[300px] flex items-center justify-center p-0">
+            {/* Use flex to center chart content, adjust padding */}
+            <CardContent className="h-[300px] flex items-center justify-center p-4 pt-0">
                  {showSkeleton ? (
                     <div className="flex justify-center items-center h-full w-full">
                         <Skeleton className="h-48 w-48 rounded-full" />
                     </div>
                 // Only render the chart if not loading AND there is data
                 ) : summary.total > 0 ? (
-                <ChartContainer config={statusChartConfig} className="min-h-[250px] w-full max-w-[90%]">
-                 <ResponsiveContainer width="100%" height={250}>
+                <ChartContainer config={statusChartConfig} className="min-h-[250px] w-full aspect-square max-w-[250px]"> {/* Centered container */}
+                 <ResponsiveContainer width="100%" height="100%">
                    <RechartsPieChart>
                      <ChartTooltip content={<ChartTooltipContent nameKey="value" hideLabel />} />
                      <Pie
@@ -208,17 +208,17 @@ export function DashboardView({ data, loading }: DashboardViewProps) {
                 <CardTitle className="flex items-center"><BarChart2 className="mr-2 h-5 w-5 text-primary"/> Assignee Workload</CardTitle>
                 <CardDescription>Number of threats assigned to each SOC analyst</CardDescription>
             </CardHeader>
-            {/* Use flex to center chart content */}
-            <CardContent className="h-[300px] flex items-center justify-center p-0">
+            {/* Adjust padding for bar chart, remove flex centering */}
+            <CardContent className="h-[300px] pl-2 pr-6 pt-4 pb-6"> {/* Added specific padding */}
                  {showSkeleton ? (
-                    <div className="flex justify-center items-center h-full w-full">
+                    <div className="flex justify-center items-center h-full w-full px-6 pb-6"> {/* Add padding back for skeleton */}
                         <Skeleton className="h-48 w-full" />
                     </div>
                  // Only render the chart if not loading AND there is data
                  ) : summary.total > 0 ? (
-                 <ChartContainer config={assigneeChartConfig} className="min-h-[250px] w-full max-w-[90%]">
-                   <ResponsiveContainer width="100%" height={250}>
-                     <BarChart data={assigneeDistribution} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} barGap={4} barCategoryGap="20%">
+                 <ChartContainer config={assigneeChartConfig} className="min-h-[250px] w-full h-full"> {/* Let container fill space */}
+                   <ResponsiveContainer width="100%" height="100%">
+                     <BarChart data={assigneeDistribution} margin={{ top: 20, right: 5, left: -15, bottom: 5 }} barGap={4} barCategoryGap="20%"> {/* Adjusted margins */}
                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                          <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} className="text-xs"/>
                          <YAxis tickLine={false} axisLine={false} tickMargin={8} width={30} className="text-xs" allowDecimals={false}/>
